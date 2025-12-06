@@ -6,6 +6,10 @@ def load_file(file_name: str) -> str:
         return f.read()
 
 
+def front(bound: str):
+    return bound[0 : len(bound) // 2]
+
+
 def check_range(id_range: str) -> List[int]:
     bounds = id_range.split("-")
     lower: str = bounds[0]
@@ -22,38 +26,34 @@ def check_range(id_range: str) -> List[int]:
         return []
 
     # Fast forward bounds to closest repeated sequence
-    first = 2 * lower[0 : len(lower) // 2]
+    first = 2 * front(lower)
     if int(first) >= int(lower):
         lower = first
     else:
-        lower = 2 * str(int(lower[0 : len(lower) // 2]) + 1)
+        lower = 2 * str(int(front(lower)) + 1)
 
-    last = 2 * upper[0 : len(upper) // 2]
+    last = 2 * front(upper)
     if int(last) <= int(upper):
         upper = last
     else:
-        upper = 2 * str(int(upper[0 : len(upper) // 2]) - 1)
+        upper = 2 * str(int(front(upper)) - 1)
 
     if int(lower) > int(upper):
         return []
 
     if int(upper) == int(lower):
-        return [int(upper)]
+        return [int(lower)]
 
-    # Increment on 
-    increment = 1 * 10 ** (len(lower) // 2)
+    # Use guaranteed number of invalids between bounds to build array of invalids
+    lower_front = int(front(lower))
+    upper_front = int(front(upper))
+    invalid_count = upper_front - lower_front + 1
+
     invalid_ids = []
 
-    while int(lower) < int(upper):
-        if lower[0:len(lower)//2] == lower[len(lower)//2:]:
-            invalid_ids.append(int(lower))
-        
-        lower = str(int(lower) + increment)
-        lower = 2 * lower[0 : len(lower) // 2]
-    
-    if upper[0:len(upper)//2] == upper[len(upper)//2:]:
-        invalid_ids.append(int(upper))
-    
+    for i in range(invalid_count):
+        invalid_ids.append(int(2 * str(lower_front + i)))
+
     return invalid_ids
 
 
@@ -67,6 +67,7 @@ def main():
         invalid_ids.extend(check_range(id_range))
 
     print(sum(invalid_ids))
+
 
 if __name__ == "__main__":
     main()
