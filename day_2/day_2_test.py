@@ -10,14 +10,16 @@ def test_1():
 
 def test_2():
     invalid_ids = check_range("95-115")
-    assert len(invalid_ids) == 1
+    assert len(invalid_ids) == 2
     assert invalid_ids[0] == 99
+    assert invalid_ids[1] == 111
 
 
 def test_3():
     invalid_ids = check_range("998-1012")
-    assert len(invalid_ids) == 1
-    assert invalid_ids[0] == 1010
+    assert len(invalid_ids) == 2
+    assert invalid_ids[0] == 999
+    assert invalid_ids[1] == 1010
 
 
 def test_4():
@@ -48,9 +50,20 @@ def test_8():
     assert len(invalid_ids) == 1
     assert invalid_ids[0] == 38593859
 
+
 def test_9():
-    invalid_ids = check_range('9226466333-9226692707')
-    assert len(invalid_ids) == 3
-    assert invalid_ids[0] == 9226492264
-    assert invalid_ids[1] == 9226592265
-    assert invalid_ids[2] == 9226692266
+    invalid_ids = check_range("565653-565659")
+    assert len(invalid_ids) == 1
+    assert invalid_ids[0] == 565656
+
+
+def test_10():
+    invalid_ids = check_range("824824821-824824827")
+    assert len(invalid_ids) == 1
+    assert invalid_ids[0] == 824824824
+
+
+def test_11():
+    invalid_ids = check_range("2121212118-2121212124")
+    assert len(invalid_ids) == 1
+    assert invalid_ids[0] == 2121212121

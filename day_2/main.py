@@ -1,4 +1,6 @@
-from typing import List
+from typing import List, Union
+
+factors_lookup = {}
 
 
 def load_file(file_name: str) -> str:
@@ -6,8 +8,35 @@ def load_file(file_name: str) -> str:
         return f.read()
 
 
-def front(bound: str):
-    return bound[0 : len(bound) // 2]
+def front(bound: str, length: Union[None, int] = None) -> str:
+    if length is None:
+        length = len(bound) // 2
+    return bound[0:length]
+
+
+def get_factors(num_length: int) -> List[int]:
+    global factors_lookup
+
+    if factors_lookup.get(num_length, None) is not None:
+        return factors_lookup[num_length]
+    else:
+        factors = []
+        for i in range(1, num_length):
+            if num_length % i == 0:
+                factors.append(i)
+        factors_lookup[num_length] = factors
+        return factors
+
+
+def get_limits(factors: List[int], bound: str) -> List[int]:
+    limits = []
+
+    for factor in factors:
+        lower_front = front(bound, factor)
+        lower_repeat = lower_front * (len(bound) // factor)
+        limits.append(int(lower_repeat))
+
+    return limits
 
 
 def check_range(id_range: str) -> List[int]:
@@ -15,44 +44,75 @@ def check_range(id_range: str) -> List[int]:
     lower: str = bounds[0]
     upper: str = bounds[1]
 
-    # Fast forward bounds to even digits
-    if len(lower) % 2 != 0:
-        lower = str(1 * (10 ** len(lower)))
-
-    if len(upper) % 2 != 0:
-        upper = str(1 * (10 ** (len(upper) - 1)) - 1)
-
-    if int(lower) > int(upper):
+    # Filter single digit edge case
+    if len(lower) == 1 and len(upper) == 1:
         return []
 
-    # Fast forward bounds to closest repeated sequence
-    first = 2 * front(lower)
-    if int(first) >= int(lower):
-        lower = first
-    else:
-        lower = 2 * str(int(front(lower)) + 1)
-
-    last = 2 * front(upper)
-    if int(last) <= int(upper):
-        upper = last
-    else:
-        upper = 2 * str(int(front(upper)) - 1)
-
-    if int(lower) > int(upper):
-        return []
-
-    if int(upper) == int(lower):
-        return [int(lower)]
-
-    # Use guaranteed number of invalids between bounds to build array of invalids
-    lower_front = int(front(lower))
-    upper_front = int(front(upper))
-    invalid_count = upper_front - lower_front + 1
-
+    # Split into different bounding regions if they do not have the same number of digits
     invalid_ids = []
+    if len(lower) != len(upper):
+        different = True
+    else:
+        different = False
 
-    for i in range(invalid_count):
-        invalid_ids.append(int(2 * str(lower_front + i)))
+    if different:
+        for i in range(len(lower), len(upper) + 1):
+            split_lower = lower if i == len(lower) else str(1 * (10 ** (i - 1)))
+            split_upper = upper if i == len(upper) else str(1 * (10 ** (i)) - 1)
+            invalid_ids.extend(check_range(f"{split_lower}-{split_upper}"))
+        return invalid_ids
+
+    factors = get_factors(len(lower))
+
+    lower_temp = lower
+    while True:
+        lower_limits = get_limits(factors, lower_temp)
+        lower_limits = [limit for limit in lower_limits if int(limit) >= int(lower)]
+        lowest_limit = min(lower_limits, default=-1)
+        if lowest_limit >= int(lower):
+            break
+        else:
+            lower_temp = (len(lower) // max(factors)) * str(
+                int(front(lower_temp, max(factors))) + 1
+            )
+
+    upper_temp = upper
+    while True:
+        upper_limits = get_limits(factors, upper_temp)
+        upper_limits = [limit for limit in upper_limits if int(limit) <= int(upper)]
+        highest_limit = max(upper_limits, default=-1)
+        if highest_limit <= int(upper) and highest_limit != -1:
+            break
+        else:
+            upper_temp = (len(upper) // max(factors)) * str(
+                int(front(upper_temp, max(factors))) - 1
+            )
+
+    print(bounds)
+    print(f"['{lowest_limit}', '{highest_limit}']\n")
+
+    # Filter edge cases
+    if int(lower) > int(highest_limit):
+        return []
+    elif int(upper) < int(lowest_limit):
+        return []
+    elif lowest_limit == highest_limit:  # type: ignore
+        return [int(lowest_limit)]
+
+    # Do the work
+    invalid_ids_index = {}
+    for factor in factors:
+        lower_front = int(front(str(lowest_limit), factor))
+        upper_front = int(front(str(highest_limit), factor))
+        invalid_count = upper_front - lower_front + 1
+
+        for i in range(invalid_count):
+            latest = int(len(lower) // factor * str(lower_front + i))
+            if invalid_ids_index.get(str(latest), None) is None and latest <= int(
+                upper
+            ):
+                invalid_ids.append(latest)
+                invalid_ids_index[latest] = True
 
     return invalid_ids
 
